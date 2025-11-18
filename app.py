@@ -614,10 +614,12 @@ def sitemap():
 # ----------------------- STATIC PROXY (serves uploads and other static files) -----------------------
 @app.route('/<path:p>')
 def static_proxy(p):
-    if Path(p).exists():
+    # only serve from known folders
+    allowed_folders = ['uploads']
+    if any(p.startswith(f"{f}/") for f in allowed_folders):
         return send_from_directory('.', p)
-    # fallback 404
     return abort(404)
+
 
 # ----------------------- KEEP-ALIVE PING -----------------------
 @app.route('/ping')
@@ -626,5 +628,7 @@ def ping():
 
 # ----------------------- RUN -----------------------
 if __name__ == '__main__':
-    print("FavHome Deliveries running...")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
+
+
