@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FavHome Deliveries & FavMarket — Juja</title>
+<meta name="description" content="FavHome Deliveries — Doorstep delivery service serving Juja. Order groceries, food, parcels & check FavMarket community items." />
+<meta name="theme-color" content="#0b76ef" />
+
+<style>
+:root{
+  --accent:#0b76ef;
+  --bg-gradient: linear-gradient(135deg,#0f111a,#1a1c2c);
+  --card-gradient: linear-gradient(145deg,#1f2233,#2a2c44);
+  --muted:#c9d1da;
+  --cta-green:#27ae60;
+  --cta-red:#c0392b;
+  --text:#eef2f7;
+  --glass: rgba(255,255,255,0.04);
+  --glass-2: rgba(255,255,255,0.02);
+  --warm: #ffd59e;
+}
+
+/* Base */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg-gradient);
+  color:var(--text);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- Welcome overlay (lovely) ---------- */
+#welcomeOverlay {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, rgba(255,245,230,0.98), rgba(255,240,225,0.9));
+  z-index: 9999;
+  gap: 12px;
+  padding: 18px;
+  opacity: 1;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.logo-bubble {
+  width: 96px; height: 96px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #ffd59e, #ffb6a2);
+  box-shadow: 0 8px 24px rgba(255,165,130,0.3);
+  color: #fff; font-weight: 900; font-size: 36px;
+  transform: scale(0.8);
+  opacity: 0;
+  animation: bubbleIn 0.8s ease-out forwards, floatBubble 4s ease-in-out infinite;
+}
+
+#welcomeOverlay h1,
+#welcomeOverlay p {
+  opacity: 0;
+  color: #333;
+}
+
+#welcomeOverlay h1 {
+  font-size:22px; margin:0; text-align:center; font-weight:800;
+  animation: fadeText 0.8s ease forwards;
+  animation-delay: 0.4s;
+}
+
+#welcomeOverlay p {
+  margin:0; font-size:14px;
+  animation: fadeText 0.8s ease forwards;
+  animation-delay: 0.6s;
+}
+
+#welcomeOverlay.hidden {
+  opacity:0; transform: scale(0.95); pointer-events:none;
+}
+
+/* welcome overlay animations */
+@keyframes bubbleIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes fadeText {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatBubble {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ---------- Header ---------- */
+.header-wrap{ position:relative; z-index:50; }
+header{
+  display:flex;align-items:center;justify-content:space-between;padding:14px 18px;
+  background: linear-gradient(90deg,var(--cta-red),var(--cta-green));
+  color:var(--text);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  border-bottom-left-radius:8px; border-bottom-right-radius:8px;
+}
+.brand{ display:flex;align-items:center;gap:10px; }
+.brand .mini{
+  width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#ffffff,#dbefff);
+  display:flex;align-items:center;justify-content:center;color:#0b76ef;font-weight:900;font-size:18px;
+}
+.brand h1{font-size:18px;margin:0;font-weight:800}
+.slogan{font-size:12px;color:rgba(255,255,255,0.95)}
+
+/* Explore fixed top-left (icon + label) */
+#exploreFixed{
+  position:fixed; left:12px; top:12px; z-index:999;
+  display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;
+  background:var(--glass); border:1px solid rgba(255,255,255,0.03);
+  backdrop-filter: blur(4px); cursor:pointer; font-weight:700;
+}
+#exploreFixed svg{ width:18px;height:18px; display:block; }
+
+/* top-right FavMarket */
+.header-actions{display:flex;align-items:center;gap:10px}
+.top-btn{ background:var(--glass); border:1px solid rgba(255,255,255,0.04); color:var(--text); padding:8px 10px;border-radius:10px; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:8px; }
+
+/* ---------- Sidebar ---------- */
+#sideShade{ position:fixed; inset:0; background:rgba(0,0,0,0.45); opacity:0; pointer-events:none; transition:opacity .22s; z-index:80; }
+#sidebar{
+  position:fixed; left:-340px; top:0; height:100%; width:340px;
+  background: linear-gradient(180deg, rgba(12,14,24,0.98), rgba(20,22,36,0.98));
+  box-shadow: 10px 0 36px rgba(0,0,0,0.5);
+  z-index:90; padding:18px; display:flex; flex-direction:column; gap:12px;
+  transition:left .22s cubic-bezier(.2,.9,.2,1);
+  border-right:1px solid rgba(255,255,255,0.02);
+}
+#sidebar.open{ left:0; }
+#sideShade.show{ opacity:1; pointer-events:auto; }
+
+.side-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.side-brand{ display:flex; gap:10px; align-items:center; }
+.side-brand .mini{ width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#71f7a1,#b1ffe0); color:#022; font-weight:900; display:flex; align-items:center; justify-content:center; font-size:18px; }
+
+/* side list */
+.side-list{ display:flex; flex-direction:column; gap:8px; margin-top:8px; overflow:auto; padding-right:8px; }
+.side-item{ display:flex; align-items:center; gap:12px; padding:10px; border-radius:10px; cursor:pointer; color:var(--text); transition:transform .12s, background .12s; user-select:none; }
+.side-item:hover{ transform:translateY(-4px); background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
+.side-item .ic{ width:36px;height:36;border-radius:8px;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#ffffff10,#ffffff06); }
+
+/* coming soon badge */
+.coming{ font-size:11px; color:#fff; background:rgba(255,255,255,0.03); padding:6px 8px; border-radius:999px; margin-left:auto; font-weight:700; }
+
+/* ---------- Hero ---------- */
+.hero{
+  width:100%; min-height:320px; display:flex; align-items:center; justify-content:space-between;
+  gap:20px; padding:28px; border-radius:12px; background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  box-shadow:0 12px 32px rgba(0,0,0,0.45); margin:18px auto; max-width:1100px;
+}
+.hero-left{ max-width:60% }
+.hero h2{ font-size:30px; margin:0 0 10px; }
+.hero p{ margin:0 0 16px; color:var(--muted) }
+.hero-cta{ display:flex; gap:12px; align-items:center; }
+
+/* main CTA (in hero) */
+.cta-primary{
+  background:linear-gradient(90deg,#27ae60,#0b76ef); color:#062; padding:12px 16px; border-radius:12px; font-weight:800; border:none; cursor:pointer;
+}
+
+/* right cards */
+.hero-right{ width:36%; display:flex; flex-direction:column; gap:10px; align-items:flex-end; }
+.card-play{ width:260px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px; border-radius:12px; box-shadow:0 10px 28px rgba(0,0,0,0.35); }
+.card-play h4{ margin:0 0 8px; color:var(--accent); font-size:14px; }
+.warm-note{ font-size:13px; color:var(--muted); line-height:1.4; }
+
+/* subtle color change for warm note / ETA */
+.warm-note-bg { background: linear-gradient(90deg,#fff6e6,#fffaf0); padding:10px; border-radius:8px; color:#0c0c0c; }
+.eta-bg { background: linear-gradient(90deg,#eaf7ff,#eefcff); padding:10px; border-radius:8px; color:#0c0c0c; font-weight:700; }
+
+/* ---------- Main grid ---------- */
+main{ max-width:1100px; margin:14px auto 40px; padding:0 16px; }
+.grid{ display:grid; grid-template-columns:1fr 380px; gap:20px; align-items:start; }
+.section-card{ background:var(--card-gradient); border-radius:12px; padding:14px; box-shadow:0 12px 28px rgba(0,0,0,0.45); }
+
+/* inputs and buttons */
+input,textarea,select{ width:100%; padding:10px; border-radius:10px; border:1px solid #3b3f55; background:#23263a; color:var(--text); margin-bottom:12px; }
+button.order-btn{ background:var(--cta-red); color:white; padding:10px 14px; border-radius:10px; border:none; font-weight:800; cursor:pointer; transition:background .18s; }
+button.order-btn:hover{ background:var(--cta-green); }
+
+/* price rows & market */
+.price-row{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,0.03) }
+.market-list{ display:flex; flex-direction:column; gap:8px; }
+.market-item{ background:rgba(255,255,255,0.02); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; }
+
+/* offline banner & toast */
+.offline{ display:none; padding:10px; border-radius:8px; background:linear-gradient(90deg,#fff3cd,#ffe8b8); color:#5a3e00 }
+.toast{ position:fixed; right:18px; bottom:110px; background:#0b76ef; color:white; padding:10px 12px; border-radius:10px; display:none; z-index:999; }
+
+/* Order round CTA (thin red ring, white inner circle) */
+#roundOrder{
+  position:fixed; right:18px; bottom:18px; z-index:999;
+  width:84px; height:84px; border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#fff,#fff);
+  box-shadow:0 12px 28px rgba(0,0,0,0.35);
+  border:6px solid rgba(192,57,43,0.95); cursor:pointer;
+  font-weight:800; color:var(--cta-red); font-size:13px;
+}
+#roundOrder:hover{ transform:scale(1.04); transition:transform .15s; }
+
+/* responsive */
+@media (max-width:960px){
+  .grid{ grid-template-columns:1fr; }
+  .hero-right{ width:100%; align-items:flex-start }
+  #sidebar{ width:92%; left:-110% }
+  #sidebar.open{ left:4% }
+}
+
+.small{ font-size:13px; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- Explore fixed top-left -->
+<div id="exploreFixed" title="Explore menu" aria-hidden="false">
+  <!-- simple menu icon (SVG) -->
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;color:var(--text)">
+    <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <div style="font-size:13px;font-weight:700;color:var(--text)">Explore</div>
+</div>
+
+<!-- Welcome overlay -->
+<div id="welcomeOverlay" aria-hidden="false">
+  <div class="logo-bubble">F</div>
+  <h1>Welcome to FavHome</h1>
+  <p>Quick local deliveries across Juja — Ebenezer & Matangi</p>
+</div>
+
+<!-- header -->
+<div class="header-wrap">
+  <header>
+    <div class="brand">
+      <div class="mini">F</div>
+      <div>
+        <h1>FavHome Deliveries</h1>
+        <div class="slogan">We deliver comfort to your doorstep — Juja (Ebenezer & Matangi)</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button id="openSidebarBtn" class="top-btn" aria-expanded="false" title="Menu">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;color:var(--text)">
+          <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        Menu
+      </button>
+      <a href="favmarket.html" class="top-btn" style="background:linear-gradient(90deg,#fff,#f6f6f6); color:#c0392b">FavMarket</a>
+    </div>
+  </header>
+</div>
+
+<!-- sidebar shade + panel -->
+<div id="sideShade" onclick="closeSidebar()"></div>
+<aside id="sidebar" role="navigation" aria-hidden="true">
+  <div class="side-top">
+    <div class="side-brand">
+      <div class="mini">F</div>
+      <div>
+        <div style="font-weight:900;font-size:15px">FavHome</div>
+        <div style="font-size:12px;color:var(--muted)">Juja • Ebenezer & Matangi</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button id="closeSidebarBtn" class="top-btn" style="padding:8px">Close</button>
+    </div>
+  </div>
+
+<nav class="side-list" id="sideList">
+  <div class="side-item" data-action="home">
+    <div class="ic">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+        <path d="M3 12l9-9 9 9v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-9z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    Home
+  </div>
+  <div class="side-item" data-action="order">
+    <div class="ic">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+        <path d="M3 3h18v18H3V3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    Place Order
+  </div>
+  <div class="side-item" data-action="favmarket">
+    <div class="ic">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </div>
+    FavMarket
+  </div>
+  <div class="side-item" data-action="support">
+    <div class="ic">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </div>
+    Support
+  </div>
+</nav>
+
+
+  <div class="side-foot small">
+    <div>Need help? Tap Support or message us on WhatsApp</div>
+    <div style="margin-top:12px;font-size:12px;color:var(--muted)">© 2025 FavHome • Built in Juja</div>
+  </div>
+</aside>
+
+<!-- hero -->
+<section class="hero" role="region" aria-label="Hero">
+  <div class="hero-left">
+    <h2>FavHome — same day delivery, local prices</h2>
+    <p>We pick up groceries, parcels and essentials — direct to your door in Juja.</p>
+    <div class="hero-cta">
+      <button class="cta-primary" onclick="openOrder()">Order Now</button>
+      <button class="top-btn" onclick="openSidebar()">Explore Menu</button>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="card-play">
+      <h4>Warm note</h4>
+      <div class="warm-note warm-note-bg">Thanks for supporting a local service — your delivery will be handled carefully.</div>
+    </div>
+    <div class="card-play">
+      <h4>Today’s ETA</h4>
+      <div class="warm-note eta-bg">Current average: <strong>12–25 minutes</strong> (subject to traffic)</div>
+    </div>
+  </div>
+</section>
+
+<!-- main grid -->
+<main>
+  <div class="grid" id="mainGrid">
+
+<!-- left: order form simplified with two copyable fields -->
+<div>
+  <section class="section-card order-section" id="orderSection">
+    <h2>Place Your Order</h2>
+    <div id="offline" class="offline">You are offline — orders will queue automatically.</div>
+
+    <form id="orderForm" autocomplete="off">
+      <label for="name">Name</label>
+      <input id="name" name="name" required placeholder="Jane Mwangi">
+
+      <label for="phone">Phone (WhatsApp preferred)</label>
+      <input id="phone" name="phone" required placeholder="0757817361">
+
+      <label for="pickup">Pickup Location</label>
+      <select id="pickup" name="pickup">
+        <option>Ebenezer Center</option>
+        <option>Matangi Center</option>
+        <option>Other</option>
+      </select>
+
+      <label for="drop">Drop / Delivery</label>
+      <input id="drop" name="drop" required placeholder="Your estate or house">
+
+      <label for="items">Items</label>
+      <textarea id="items" name="items" rows="3" required placeholder="List items or instructions"></textarea>
+
+      <label for="time">Preferred Time</label>
+      <input id="time" name="time" placeholder="ASAP or 15:00">
+
+      <label for="payment">Payment</label>
+      <select id="payment" name="payment">
+        <option value="cash">Cash on delivery</option>
+        <option value="mpesa">M-Pesa</option>
+      </select>
+
+      <div id="mpesaFields" style="display:none; margin-top:8px;">
+        <!-- Paybill -->
+        <div style="margin-top:6px; padding:10px; background:linear-gradient(90deg,#eef2f7,#dde6f5); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-weight:700; color:#0b76ef;">Paybill:</span>
+          <input type="text" value="400200" id="paybill" readonly style="border:none; background:transparent; font-weight:700; color:#0b76ef; text-align:right;">
+          <button type="button" onclick="copyPaybill()" style="margin-left:8px; padding:6px 10px; border:none; border-radius:6px; background:#0b76ef; color:white; cursor:pointer;">Copy</button>
+        </div>
+
+        <!-- Account Number -->
+        <div style="margin-top:8px; padding:10px; background:linear-gradient(90deg,#eef2f7,#dde6f5); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-weight:700; color:#0b76ef;">Account Number:</span>
+          <input type="text" value="123456" id="accountNumber" readonly style="border:none; background:transparent; font-weight:700; color:#0b76ef; text-align:right;">
+          <button type="button" onclick="copyAcc()" style="margin-left:8px; padding:6px 10px; border:none; border-radius:6px; background:#0b76ef; color:white; cursor:pointer;">Copy</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+        <button type="submit" class="order-btn">Place Order</button>
+        <a id="waLink" class="top-btn whatsapp" href="#" target="_blank" style="background:#25D366;border:none;color:#fff">WhatsApp Order</a>
+      </div>
+    </form>
+
+    <h3 style="margin-top:14px">Pricing (Juja)</h3>
+    <div class="price-row"><div>Within same area</div><div>KSh 79</div></div>
+    <div class="price-row"><div>Across Juja</div><div>KSh 99–150</div></div>
+    <div class="price-row"><div>Supermarket pickup</div><div>+KSh 20</div></div>
+    <div class="price-row"><div>Heavy items</div><div>+KSh 40</div></div>
+    <div class="price-row"><div>Night (after 9pm)</div><div>+KSh 30</div></div>
+  </section>
+
+
+      <section class="section-card" style="margin-top:14px">
+        <h3>How it Works</h3>
+        <ol class="small">
+          <li>Fill the order form or message via WhatsApp.</li>
+          <li>We confirm ETA and price.</li>
+          <li>Delivery — enjoy.</li>
+        </ol>
+        <h3 style="margin-top:12px">Privacy & Terms</h3>
+        <p class="small">We only use your info for order fulfilment. No logins, no accounts.</p>
+      </section>
+    </div>
+
+    <!-- right: favmarket -->
+    <aside class="section-card market-section" id="marketSection" style="min-height:240px">
+      <h2>FavMarket — Buy & Sell</h2>
+      <p class="small">Discover items or contact sellers. Local deliveries only. Payment via M-Pesa or cash.</p>
+
+      <div id="marketList" class="market-list" aria-live="polite">
+        <div style="opacity:.6">Loading items…</div>
+      </div>
+    </aside>
+
+  </div>
+</main>
+
+<!-- round Order button (thin red ring, white inner) -->
+<div id="roundOrder" title="Order now" role="button" tabindex="0" aria-label="Order now">Order</div>
+
+<!-- toast -->
+<div id="toast" class="toast" role="status"></div>
+
+<footer style="text-align:center;padding:18px;color:rgba(255,255,255,0.7);">
+  FavHome Deliveries & FavMarket • Serving Juja • Ebenezer Center & Matangi Center
+</footer>
+
+
+<script>
+/* ---------- Small helpers & controls ---------- */
+const exploreFixed = document.getElementById('exploreFixed');
+const openSidebarBtn = document.getElementById('openSidebarBtn');
+const sidebar = document.getElementById('sidebar');
+const sideShade = document.getElementById('sideShade');
+const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+const roundOrder = document.getElementById('roundOrder');
+const welcome = document.getElementById('welcomeOverlay');
+const paymentSelect = document.getElementById('payment');
+const mpesaFields = document.getElementById('mpesaFields');
+
+function openSidebar(){
+  sidebar.classList.add('open');
+  sideShade.classList.add('show');
+  sidebar.setAttribute('aria-hidden','false');
+  openSidebarBtn.setAttribute('aria-expanded','true');
+}
+function closeSidebar(){
+  sidebar.classList.remove('open');
+  sideShade.classList.remove('show');
+  sidebar.setAttribute('aria-hidden','true');
+  openSidebarBtn.setAttribute('aria-expanded','false');
+}
+
+exploreFixed.addEventListener('click', openSidebar);
+openSidebarBtn.addEventListener('click', openSidebar);
+closeSidebarBtn.addEventListener('click', closeSidebar);
+sideShade.addEventListener('click', closeSidebar);
+roundOrder.addEventListener('click', openOrder);
+
+/* quicker welcome overlay hide */
+window.addEventListener('load', ()=> {
+  setTimeout(()=>{ welcome.classList.add('hidden'); }, 800);
+  setTimeout(()=>{ welcome.style.display='none'; }, 1200);
+});
+
+
+/* toast helper */
+const toastEl = document.getElementById('toast'); let toastTimer=null;
+function showToast(msg, ms=2400){
+  clearTimeout(toastTimer);
+  toastEl.textContent = msg;
+  toastEl.style.display = 'block';
+  toastTimer = setTimeout(()=>{ toastEl.style.display='none'; }, ms);
+}
+
+/* ---------- Order logic (keeps original behaviour) ---------- */
+function toggleMpesa(value){
+  mpesaFields.style.display = value === 'mpesa' ? 'block' : 'none';
+}
+paymentSelect.addEventListener('change', ()=> toggleMpesa(paymentSelect.value));
+
+const form = document.getElementById('orderForm');
+const waLink = document.getElementById('waLink');
+const offlineBanner = document.getElementById('offline');
+
+function showOffline(isOffline){ offlineBanner.style.display = isOffline ? 'block' : 'none'; }
+showOffline(!navigator.onLine);
+window.addEventListener('online', ()=> showOffline(false));
+window.addEventListener('offline', ()=> showOffline(true));
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const data = {
+    name: form.name.value.trim(),
+    phone: form.phone.value.trim(),
+    pickup: form.pickup.value,
+    drop: form.drop.value.trim(),
+    items: form.items.value.trim(),
+    time: form.time.value.trim(),
+    payment: form.payment.value,
+    paybill: document.getElementById('paybill') ? document.getElementById('paybill').value.trim() : '',
+    mpesaPin: document.getElementById('mpesaPin') ? document.getElementById('mpesaPin').value.trim() : ''
+  };
+
+  // Build WhatsApp fallback / contact link
+  let phoneNumber = data.phone.replace(/\D/g,'');
+  if(phoneNumber.startsWith('0')) phoneNumber = '+254' + phoneNumber.slice(1);
+  else if(!phoneNumber.startsWith('+')) phoneNumber = '+254' + phoneNumber; // best-effort
+  const wa = `https://wa.me/${phoneNumber.replace(/\D/g,'')}?text=${encodeURIComponent(
+    `Order from FavHome\nName:${data.name}\nPhone:${data.phone}\nPickup:${data.pickup}\nDrop:${data.drop}\nItems:${data.items}\nTime:${data.time}\nPayment:${data.payment}${data.payment==='mpesa' ? '\nPaybill:' + data.paybill : ''}`
+  )}`;
+  waLink.href = wa;
+
+  try{
+    const res = await fetch('/order', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    if(res.ok){
+      showToast('Order received — we will confirm by WhatsApp.');
+      form.reset(); toggleMpesa('cash');
+    } else {
+      // server returned non-2xx — fallback to WA
+      window.open(wa,'_blank');
+    }
+  }catch(err){
+    // network error: open WA as fallback
+    window.open(wa,'_blank');
+  }
+});
+
+/* ---------- FavMarket load ---------- */
+const marketList = document.getElementById('marketList');
+async function loadMarket(){
+  marketList.innerHTML = '<div style="opacity:.6">Loading items…</div>';
+  try{
+    // prefer the public market endpoint
+    let res = await fetch('/api/market/public');
+    if(!res.ok){
+      // fallback to /api/market (older) or admin endpoint structure
+      res = await fetch('/api/market');
+    }
+    const data = await res.json();
+    // support both: array response or object {market: [...]}
+    const items = Array.isArray(data) ? data : (data && data.market) ? data.market : [];
+    if(!items || items.length === 0){
+      marketList.innerHTML = '<div style="opacity:.7">No items listed yet.</div>';
+      return;
+    }
+    marketList.innerHTML = '';
+    items.slice(0,12).forEach(item=>{
+      const wrapper = document.createElement('div');
+      wrapper.className = 'market-item';
+
+      const left = document.createElement('div');
+      const title = document.createElement('strong');
+      title.textContent = item.title || 'Untitled';
+      left.appendChild(title);
+      left.appendChild(document.createElement('br'));
+      const small = document.createElement('small');
+      small.textContent = item.description || '';
+      left.appendChild(small);
+
+      const right = document.createElement('div');
+      right.style.display = 'flex';
+      right.style.gap = '8px';
+      right.style.alignItems = 'center';
+      const price = document.createElement('small');
+      price.textContent = 'KSh ' + (item.price != null ? item.price : '0');
+      const buyBtn = document.createElement('button');
+      buyBtn.className = 'order-btn';
+      buyBtn.textContent = 'Buy';
+      buyBtn.onclick = ()=> buyItem(item.seller_name||'Seller', item.phone||'', item.title||'', item.price||0);
+
+      right.appendChild(price);
+      right.appendChild(buyBtn);
+
+      wrapper.appendChild(left);
+      wrapper.appendChild(right);
+      marketList.appendChild(wrapper);
+    });
+  }catch(e){
+    console.error(e);
+    marketList.innerHTML = '<div style="opacity:.7">Failed to load items.</div>';
+  }
+}
+loadMarket();
+
+function buyItem(seller,phone,title,price){
+  // Normalize phone to international for WhatsApp
+  let phoneNormalized = (phone||'').replace(/\D/g,'');
+  if(phoneNormalized.startsWith('0')) phoneNormalized = '254' + phoneNormalized.slice(1);
+  if(!phoneNormalized) {
+    // no phone: open support
+    openSupport();
+    return;
+  }
+  const msg = encodeURIComponent(`Hello ${seller}, I want to buy: ${title} for KSh ${price}.`);
+  const wa = `https://wa.me/${phoneNormalized}?text=${msg}`;
+  window.open(wa,'_blank');
+}
+
+/* ---------- keep-awake pings & service worker ---------- */
+(function keepAwake(){
+  setInterval(()=>{ fetch('/ping').then(r=>r.json()).then(j=>console.log('ping',j.ts)).catch(()=>{}); }, 15000);
+})();
+
+const swCode = `
+  const CACHE_NAME='favhome-v1';
+  const OFFLINE_URL='.';
+  const toCache=['.','index.html'];
+  self.addEventListener('install',evt=>{self.skipWaiting();evt.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(toCache)));});
+  self.addEventListener('activate',evt=>evt.waitUntil(self.clients.claim()));
+  self.addEventListener('fetch',evt=>evt.respondWith(caches.match(evt.request).then(r=>r||fetch(evt.request).then(res=>{ if(evt.request.method==='GET'){ caches.open(CACHE_NAME).then(c=>c.put(evt.request,res.clone())); } return res; }).catch(()=>caches.match(OFFLINE_URL)))));
+`;
+if('serviceWorker' in navigator){ const blob=new Blob([swCode],{type:'application/javascript'}); navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{}); }
+
+/* ---------- utilities ---------- */
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/'/g,"&#39;").replace(/\"/g,"&quot;"); }
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,''); }
+
+/* sidebar item actions (handles nav actions) */
+document.getElementById('sideList').addEventListener('click', (ev)=>{
+  const item = ev.target.closest('.side-item'); if(!item) return;
+  const action = item.getAttribute('data-action');
+  closeSidebar();
+  switch(action){
+    case 'home': window.scrollTo({top:0,behavior:'smooth'}); showToast('Home'); break;
+    case 'order': openOrder(); break;
+    case 'favmarket': location.href='favmarket.html'; break;
+    case 'profile': showToast('My Profile — coming soon'); break;
+    case 'offers': showToast('Offers & Promos — none active'); break;
+    case 'track': showToast('Track Delivery — coming soon'); break;
+    case 'support': openSupport(); break;
+    case 'faq': showToast('FAQ — coming soon'); break;
+    case 'about': showToast('About FavHome'); break;
+    case 'logout': showToast('Signed out (demo)'); break;
+    default: showToast('Opening'); break;
+  }
+});
+
+/* support */
+function openSupport(){
+  const supportNumber = '+254757817361';
+  const wa = `https://wa.me/${supportNumber.replace(/\D/g,'')}?text=${encodeURIComponent('Hello FavHome support, I need help with...')}`;
+  window.open(wa,'_blank');
+}
+
+/* open order scroll */
+function openOrder(){
+  const el = document.getElementById('orderSection');
+  if(!el) return;
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+  showToast('Order form opened');
+}
+
+/* keyboard close sidebar */
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ closeSidebar(); } });
+function copyPaybill() {
+  const pb = document.getElementById('paybill');
+  if(pb) navigator.clipboard.writeText(pb.value).then(()=>alert('Paybill copied!'));
+}
+function copyAcc() {
+  const acc = document.getElementById('accountNumber');
+  if(acc) navigator.clipboard.writeText(acc.value).then(()=>alert('Account number copied!'));
+}
+
+/* small UX: refresh market when page visible */
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible'){ loadMarket(); } });
+</script>
+</body>
+</html>
