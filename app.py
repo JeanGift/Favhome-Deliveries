@@ -19,63 +19,6 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
-# ----------------------- DB SETUP (single, correct) -----------------------
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    # create orders with payment_status column included so older DBs lacking it won't fail later
-    c.execute('''CREATE TABLE IF NOT EXISTS orders (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        phone TEXT,
-        pickup TEXT,
-        drop_loc TEXT,
-        items TEXT,
-        preferred_time TEXT,
-        payment TEXT,
-        fee INTEGER DEFAULT 0,
-        extras TEXT DEFAULT '',
-        status TEXT DEFAULT 'pending',
-        payment_status TEXT DEFAULT '',
-        created_at TEXT
-    )''')
-    # create market table
-    c.execute('''CREATE TABLE IF NOT EXISTS market (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        seller_name TEXT,
-        phone TEXT,
-        title TEXT,
-        description TEXT,
-        price INTEGER,
-        payment TEXT,
-        image TEXT DEFAULT '',
-        status TEXT DEFAULT 'available',
-        created_at TEXT
-    )''')
-    conn.commit()
-    conn.close()
-
-def update_db_columns():
-    # ensure columns exist for older DBs
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    try:
-        c.execute("ALTER TABLE orders ADD COLUMN fee INTEGER DEFAULT 0")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        c.execute("ALTER TABLE orders ADD COLUMN extras TEXT DEFAULT ''")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        c.execute("ALTER TABLE orders ADD COLUMN payment_status TEXT DEFAULT ''")
-    except sqlite3.OperationalError:
-        pass
-    conn.commit()
-    conn.close()
-
-init_db()
-update_db_columns()
 
 # ----------------------- HELPERS -----------------------
 def normalize_location(s):
@@ -83,8 +26,7 @@ def normalize_location(s):
 
 def is_night_time(tstr):
     try:
-        if not tstr:
-            return False
+        if not tstr: return False
         s = tstr.lower().replace(' ', '')
         if 'pm' in s:
             h = int(s.split('pm')[0].split(':')[0]) % 12 + 12
@@ -630,5 +572,6 @@ def ping():
 if __name__ == '__main__':
     print("FavHome Deliveries running...")
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
+
 
 
