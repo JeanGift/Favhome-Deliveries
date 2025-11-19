@@ -1,17 +1,28 @@
-# full updated app.py
+# app.py — FavHome Deliveries (safe GitHub-backed SQLite sync on boot + after-writes)
 import os
 import sqlite3
 import html
-from flask import Flask, request, jsonify, send_from_directory, abort
+import base64
+import requests
+import hashlib
+import time
 from datetime import datetime
+from flask import Flask, request, jsonify, send_from_directory, abort
 from pathlib import Path
 from werkzeug.utils import secure_filename
 
 # ----------------------- CONFIG -----------------------
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GITHUB_REPO = os.getenv("GITHUB_REPO", "")  # format: owner/repo
+GITHUB_DB_PATH = os.getenv("GITHUB_DB_PATH", "orders.db")  # path inside repo
+GITHUB_API_CONTENTS = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_DB_PATH}"
+GITHUB_API_COMMITS = f"https://api.github.com/repos/{GITHUB_REPO}/commits"
+
 app = Flask(__name__, static_folder='.', template_folder='.')
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev_key_here')
 
 DB_PATH = 'orders.db'
+# default ADMIN_KEY may be overridden by env var OR the admin password stored in app.db
 ADMIN_KEY = os.getenv('FAVHOME_ADMIN_KEY', 'change_me')
 PAYBILL = os.getenv('FAVHOME_PAYBILL', '400200')
 
@@ -19,6 +30,323 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
+# ----------------------- UTILITIES -----------------------
+def _headers():
+    h = {"Accept": "application/vnd.github.v3+json"}
+    if GITHUB_TOKEN:
+        h["Authorization"] = f"Bearer {GITHUB_TOKEN}"
+    return h
+
+def _sha256_of_bytes(b: bytes) -> str:
+    return hashlib.sha256(b).hexdigest()
+
+def get_remote_file_info():
+    """
+    Returns tuple (status_code, content_bytes_or_none, sha_or_none, commit_date_iso_or_none)
+    """
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        return None, None, None, None
+
+    try:
+        r = requests.get(GITHUB_API_CONTENTS, headers=_headers(), timeout=15)
+    except Exception as e:
+        print("get_remote_file_info: request failed:", e)
+        return None, None, None, None
+
+    if r.status_code != 200:
+        return r.status_code, None, None, None
+
+    j = r.json()
+    encoded = j.get("content", "")
+    sha = j.get("sha")
+    try:
+        content = base64.b64decode(encoded)
+    except Exception:
+        content = None
+
+    # Get latest commit date for path
+    commit_date = None
+    try:
+        q = {"path": GITHUB_DB_PATH, "per_page": 1}
+        rc = requests.get(GITHUB_API_COMMITS, headers=_headers(), params=q, timeout=15)
+        if rc.status_code == 200 and isinstance(rc.json(), list) and len(rc.json()) > 0:
+            commit_date = rc.json()[0]["commit"]["committer"]["date"]
+    except Exception as e:
+        print("get_remote_file_info: commit lookup failed:", e)
+
+    return r.status_code, content, sha, commit_date
+
+def upload_bytes_to_github(path_in_repo: str, content_bytes: bytes, message: str, existing_sha: str = None):
+    """
+    Uploads bytes to given path in repo. Creates or updates file.
+    Returns requests.Response or None on error.
+    """
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        print("upload disabled: missing GITHUB_TOKEN or GITHUB_REPO")
+        return None
+
+    api_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path_in_repo}"
+    payload = {
+        "message": message,
+        "content": base64.b64encode(content_bytes).decode()
+    }
+    if existing_sha:
+        payload["sha"] = existing_sha
+
+    try:
+        r = requests.put(api_url, headers=_headers(), json=payload, timeout=20)
+        if r.status_code not in (200, 201):
+            print("upload_bytes_to_github: GitHub returned", r.status_code, r.text[:400])
+        return r
+    except Exception as e:
+        print("upload_bytes_to_github: request failed:", e)
+        return None
+
+def safe_startup_sync():
+    """
+    Implements the safe A behavior:
+    - Fetch remote content and its commit date
+    - If remote newer than local -> replace local with remote
+    - If local newer than remote -> create remote backup (remote content pushed to GITHUB_DB_PATH.bak.TIMESTAMP),
+      then upload local content to the primary path
+    - If no remote exists -> do not overwrite anything; upload local as initial file (if exists)
+    """
+    print("Starting safe startup sync with GitHub...")
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        print("GitHub sync disabled: GITHUB_TOKEN or GITHUB_REPO not set.")
+        return
+
+    status, remote_content, remote_sha, remote_commit_date = get_remote_file_info()
+    local_exists = Path(DB_PATH).exists()
+
+    # helper timestamps
+    def iso_to_epoch(iso_str):
+        try:
+            # Example: "2023-08-01T12:34:56Z"
+            dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+            return dt.timestamp()
+        except Exception:
+            return None
+
+    remote_epoch = iso_to_epoch(remote_commit_date) if remote_commit_date else None
+    local_epoch = Path(DB_PATH).stat().st_mtime if local_exists else None
+
+    # Case: remote exists
+    if status == 200 and remote_content is not None:
+        print("Remote DB found in GitHub (sha:", remote_sha, ").")
+        # if local doesn't exist -> write remote to local
+        if not local_exists:
+            try:
+                with open(DB_PATH, "wb") as f:
+                    f.write(remote_content)
+                print("Local DB created from GitHub remote.")
+            except Exception as e:
+                print("Failed to write local DB from remote:", e)
+            return
+
+        # both exist: compare "newer"
+        # prefer commit date from GitHub if available; otherwise compare content hash
+        if remote_epoch and local_epoch:
+            if remote_epoch > local_epoch + 1:  # remote is newer (add small tolerance)
+                try:
+                    with open(DB_PATH, "wb") as f:
+                        f.write(remote_content)
+                    print("Local DB replaced by newer remote DB from GitHub.")
+                except Exception as e:
+                    print("Failed to overwrite local DB with remote:", e)
+                return
+            elif local_epoch > remote_epoch + 1:
+                # local is newer -> create remote backup then upload local to remote main path
+                timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+                backup_path = f"{GITHUB_DB_PATH}.bak.{timestamp}"
+                try:
+                    # push remote content as backup file
+                    if remote_content:
+                        upload_bytes_to_github(backup_path, remote_content, f"backup remote DB before startup overwrite {timestamp}")
+                        print("Remote DB backed up to", backup_path)
+                except Exception as e:
+                    print("Failed to create remote backup:", e)
+                # upload local
+                try:
+                    with open(DB_PATH, "rb") as f:
+                        local_bytes = f.read()
+                    r = upload_bytes_to_github(GITHUB_DB_PATH, local_bytes, f"startup sync: upload local DB {timestamp}", existing_sha=remote_sha)
+                    if r is not None and r.status_code in (200,201):
+                        print("Local DB uploaded to GitHub main path during startup.")
+                    else:
+                        print("Local DB upload during startup returned", getattr(r, "status_code", None))
+                except Exception as e:
+                    print("Failed to upload local DB to GitHub:", e)
+                return
+            else:
+                # timestamps roughly equal, compare content hash to be safe
+                with open(DB_PATH, "rb") as f:
+                    local_bytes = f.read()
+                if _sha256_of_bytes(local_bytes) != _sha256_of_bytes(remote_content):
+                    # conflict — back up remote then upload local
+                    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+                    backup_path = f"{GITHUB_DB_PATH}.bak.{timestamp}"
+                    try:
+                        upload_bytes_to_github(backup_path, remote_content, f"backup remote DB before startup conflict {timestamp}")
+                        print("Remote DB backed up to", backup_path)
+                    except Exception as e:
+                        print("Failed to backup remote in conflict:", e)
+                    try:
+                        r = upload_bytes_to_github(GITHUB_DB_PATH, local_bytes, f"startup sync: upload local DB (conflict) {timestamp}", existing_sha=remote_sha)
+                        print("Conflict upload result:", getattr(r, "status_code", None))
+                    except Exception as e:
+                        print("Failed to upload local DB in conflict:", e)
+                else:
+                    print("Local and remote DB content identical; nothing to do.")
+                return
+        else:
+            # missing commit dates — fall back to hash comparison
+            with open(DB_PATH, "rb") as f:
+                local_bytes = f.read()
+            if _sha256_of_bytes(local_bytes) == _sha256_of_bytes(remote_content):
+                print("Local and remote DB identical (by hash).")
+                return
+            else:
+                # safer approach: backup remote, and upload whichever is newer by mtime if available
+                if local_epoch and (not remote_epoch or local_epoch >= (remote_epoch or 0)):
+                    # local seems newer — back up remote then upload local
+                    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+                    backup_path = f"{GITHUB_DB_PATH}.bak.{timestamp}"
+                    try:
+                        upload_bytes_to_github(backup_path, remote_content, f"backup remote DB before startup overwrite {timestamp}")
+                        print("Remote DB backed up to", backup_path)
+                    except Exception as e:
+                        print("Failed to create remote backup (no commit date):", e)
+                    try:
+                        r = upload_bytes_to_github(GITHUB_DB_PATH, local_bytes, f"startup sync: upload local DB {timestamp}", existing_sha=remote_sha)
+                        print("Local DB uploaded (no commit date). status:", getattr(r, "status_code", None))
+                    except Exception as e:
+                        print("Failed to upload local DB (no commit date):", e)
+                else:
+                    # remote considered newer — overwrite local
+                    try:
+                        with open(DB_PATH, "wb") as f:
+                            f.write(remote_content)
+                        print("Local DB replaced by remote (no commit date available).")
+                    except Exception as e:
+                        print("Failed to write local DB from remote (no commit date):", e)
+                return
+    else:
+        # No remote file found or error reading remote
+        print("No remote DB present or fetch failed (status {}).".format(status))
+        # If local exists, upload it as initial DB (safe: make initial commit)
+        if local_exists:
+            try:
+                with open(DB_PATH, "rb") as f:
+                    local_bytes = f.read()
+                timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+                r = upload_bytes_to_github(GITHUB_DB_PATH, local_bytes, f"startup sync: upload local DB initial {timestamp}")
+                if r is not None and r.status_code in (200,201):
+                    print("Local DB uploaded to GitHub as initial DB.")
+                else:
+                    print("Initial upload returned", getattr(r, "status_code", None))
+            except Exception as e:
+                print("Failed initial upload of local DB:", e)
+        else:
+            print("No local DB either — nothing to sync on startup.")
+
+def download_db_from_github():
+    """
+    Simpler helper: download remote content to local if remote exists and local missing.
+    Kept for compatibility but safe_startup_sync is preferred.
+    """
+    status, remote_content, remote_sha, remote_commit_date = get_remote_file_info()
+    if status == 200 and remote_content:
+        try:
+            with open(DB_PATH, "wb") as f:
+                f.write(remote_content)
+            print("download_db_from_github: local DB written from GitHub.")
+        except Exception as e:
+            print("download_db_from_github: write failed:", e)
+    else:
+        print("download_db_from_github: remote not present or fetch failed.")
+
+def upload_db_to_github():
+    """
+    Upload current DB_PATH to GitHub main path. Attempt to include current remote sha if available
+    to update instead of creating duplicates.
+    """
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        print("upload_db_to_github: disabled (missing token/repo)")
+        return
+    if not Path(DB_PATH).exists():
+        print("upload_db_to_github: no local DB to upload")
+        return
+    try:
+        with open(DB_PATH, "rb") as f:
+            local_bytes = f.read()
+    except Exception as e:
+        print("upload_db_to_github: failed to read local DB:", e)
+        return
+
+    # try to fetch current remote sha
+    try:
+        r = requests.get(GITHUB_API_CONTENTS, headers=_headers(), timeout=15)
+        remote_sha = r.json().get("sha") if r.status_code == 200 else None
+    except Exception:
+        remote_sha = None
+
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    r2 = upload_bytes_to_github(GITHUB_DB_PATH, local_bytes, f"update database {timestamp}", existing_sha=remote_sha)
+    if r2 is not None and r2.status_code in (200,201):
+        print("upload_db_to_github: success", r2.status_code)
+    else:
+        print("upload_db_to_github: failed or returned", getattr(r2, "status_code", None))
+
+# ----------------------- ADMIN DB HELPERS -----------------------
+def init_admin():
+    conn = sqlite3.connect('app.db')
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS admin (
+            id INTEGER PRIMARY KEY,
+            password TEXT NOT NULL
+        )
+    """)
+    # insert default password 1q2w3e if not exists
+    c.execute("SELECT * FROM admin")
+    if not c.fetchone():
+        c.execute("INSERT INTO admin (password) VALUES (?)", ("1q2w3e",))
+    conn.commit()
+    conn.close()
+
+def get_admin_password_from_db():
+    try:
+        conn = sqlite3.connect('app.db')
+        c = conn.cursor()
+        c.execute("SELECT password FROM admin LIMIT 1")
+        row = c.fetchone()
+        conn.close()
+        return row[0] if row else None
+    except Exception:
+        return None
+
+def is_admin_key(k):
+    # checks DB directly
+    try:
+        conn = sqlite3.connect('app.db')
+        c = conn.cursor()
+        c.execute("SELECT password FROM admin LIMIT 1")
+        row = c.fetchone()
+        conn.close()
+        if not row:
+            return False
+        return k == row[0]
+    except Exception:
+        return False
+
+# create admin table and ensure password exists
+init_admin()
+# If ADMIN_KEY env var is the default or not set, prefer the DB-stored admin password.
+_db_pw = get_admin_password_from_db()
+if (not os.getenv('FAVHOME_ADMIN_KEY')) or (ADMIN_KEY == 'change_me'):
+    if _db_pw:
+        ADMIN_KEY = _db_pw
 
 # ----------------------- HELPERS -----------------------
 def normalize_location(s):
@@ -67,8 +395,31 @@ def compute_fee(pickup, drop, items, preferred_time):
     return base, extras
 
 def require_admin(req):
-    key = req.headers.get('X-ADMIN-KEY') or req.args.get('admin_key')
-    return key == ADMIN_KEY
+    """
+    Accept admin key via:
+     - X-ADMIN-KEY header
+     - ?admin_key= in query string
+     - JSON body { "admin_key": "..." }
+    The provided key is accepted if it matches either the ADMIN_KEY env value OR the password stored in app.db.
+    """
+    key = None
+    try:
+        key = req.headers.get('X-ADMIN-KEY') or req.args.get('admin_key')
+        if not key and req.is_json:
+            j = req.get_json(silent=True) or {}
+            key = j.get('admin_key') or j.get('adminKey') or j.get('admin')
+    except Exception:
+        key = None
+
+    if not key:
+        return False
+
+    # match against configured ADMIN_KEY (env or overridden by DB) OR the DB password
+    if key == ADMIN_KEY:
+        return True
+    if is_admin_key(key):
+        return True
+    return False
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXT
@@ -136,7 +487,10 @@ def market_post():
                 (seller_name, phone, title, description, price, payment, image, created_at)
             )
             mid = c.lastrowid
+            conn.commit()
 
+        # upload DB to GitHub after mutation
+        upload_db_to_github()
         return jsonify({"status": "ok", "market_id": mid})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -167,16 +521,13 @@ def fetch_market_rows(public=False):
         })
     return out
 
-
 @app.route('/api/market')
 def api_market():
     return jsonify(fetch_market_rows())
 
-
 @app.route('/api/market/public')
 def api_market_public():
     return jsonify(fetch_market_rows(public=True))
-
 
 # ----------------------- MARKET EDIT/DELETE -----------------------
 @app.route('/market/<int:mid>', methods=['PUT'])
@@ -193,6 +544,9 @@ def market_edit(mid):
                 "UPDATE market SET title=?, description=?, price=?, payment=? WHERE id=?",
                 (title, description, price, payment, mid)
             )
+            conn.commit()
+
+        upload_db_to_github()
         return jsonify({"status": "ok"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -204,10 +558,12 @@ def market_delete(mid):
         with sqlite3.connect(DB_PATH) as conn:
             c = conn.cursor()
             c.execute("DELETE FROM market WHERE id=?", (mid,))
+            conn.commit()
+
+        upload_db_to_github()
         return jsonify({"status": "ok"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 # ----------------------- ORDER API -----------------------
 @app.route('/order', methods=['POST'])
@@ -235,6 +591,8 @@ def order():
         oid = c.lastrowid
         conn.close()
 
+        # upload DB to GitHub after mutation
+        upload_db_to_github()
         return jsonify({"status":"ok","order_id":oid,"fee":fee})
 
     except Exception as e:
@@ -424,6 +782,7 @@ def mark(oid):
     c.execute("UPDATE orders SET status='delivered' WHERE id=?", (oid,))
     conn.commit()
     conn.close()
+    upload_db_to_github()
     return jsonify({'status':'ok'})
 
 @app.route('/1q2w3e/market/mark/<int:mid>', methods=['POST'])
@@ -435,6 +794,7 @@ def market_mark(mid):
     c.execute("UPDATE market SET status='sold' WHERE id=?", (mid,))
     conn.commit()
     conn.close()
+    upload_db_to_github()
     return jsonify({'status':'ok'})
 
 @app.route('/1q2w3e/payment/<int:oid>/approve', methods=['POST'])
@@ -446,6 +806,7 @@ def approve_payment(oid):
     c.execute("UPDATE orders SET payment_status='approved' WHERE id=?", (oid,))
     conn.commit()
     conn.close()
+    upload_db_to_github()
     return jsonify({'status':'ok'})
 
 @app.route('/1q2w3e/payment/<int:oid>/disapprove', methods=['POST'])
@@ -457,6 +818,7 @@ def disapprove_payment(oid):
     c.execute("UPDATE orders SET payment_status='disapproved' WHERE id=?", (oid,))
     conn.commit()
     conn.close()
+    upload_db_to_github()
     return jsonify({'status':'ok'})
 
 @app.route('/1q2w3e/order/delete/<int:oid>', methods=['POST'])
@@ -468,6 +830,7 @@ def delete_order(oid):
     c.execute("DELETE FROM orders WHERE id=?", (oid,))
     conn.commit()
     conn.close()
+    upload_db_to_github()
     return jsonify({'status':'ok'})
 
 @app.route('/1q2w3e/market/delete/<int:mid>', methods=['POST'])
@@ -479,6 +842,7 @@ def delete_market(mid):
     c.execute("DELETE FROM market WHERE id=?", (mid,))
     conn.commit()
     conn.close()
+    upload_db_to_github()
     return jsonify({'status':'ok'})
 
 @app.route('/1q2w3e/order/edit/<int:oid>', methods=['POST'])
@@ -495,6 +859,7 @@ def edit_order(oid):
     c.execute(f"UPDATE orders SET {field}=? WHERE id=?", (value, oid))
     conn.commit()
     conn.close()
+    upload_db_to_github()
     return jsonify({'status':'ok'})
 
 @app.route('/1q2w3e/market/edit/<int:mid>', methods=['POST'])
@@ -511,6 +876,7 @@ def edit_market(mid):
     c.execute(f"UPDATE market SET {field}=? WHERE id=?", (value, mid))
     conn.commit()
     conn.close()
+    upload_db_to_github()
     return jsonify({'status':'ok'})
 
 # ----------------------- PUBLIC FEEDS -----------------------
@@ -562,16 +928,58 @@ def static_proxy(p):
         return send_from_directory('.', p)
     return abort(404)
 
-
 # ----------------------- KEEP-ALIVE PING -----------------------
 @app.route('/ping')
 def ping():
     return jsonify({"alive": True, "ts": datetime.now().timestamp()})
 
-# ----------------------- RUN -----------------------
+def init_main_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    # Orders table
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            phone TEXT,
+            pickup TEXT,
+            drop_loc TEXT,
+            items TEXT,
+            preferred_time TEXT,
+            payment TEXT,
+            payment_status TEXT DEFAULT '',
+            fee INTEGER DEFAULT 0,
+            extras TEXT,
+            status TEXT DEFAULT '',
+            created_at TEXT
+        )
+    """)
+    # Market table
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS market (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            seller_name TEXT,
+            phone TEXT,
+            title TEXT,
+            description TEXT,
+            price INTEGER DEFAULT 0,
+            payment TEXT,
+            image TEXT,
+            status TEXT DEFAULT '',
+            created_at TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+# Initialize DBs
+# Note: init_admin() was already called earlier to ensure admin exists.
+init_main_db()
+
+# ----------------------- STARTUP SYNC & RUN -----------------------
+# Perform safe startup sync (this may upload local DB only after creating a remote backup if needed)
+safe_startup_sync()
+
 if __name__ == '__main__':
     print("FavHome Deliveries running...")
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
-
-
-
