@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>FavHome Deliveries — Same-Day Home Delivery in Juja | FavMarket</title>
-<meta name="description" content="FavHome Deliveries — Fast, reliable same-day home delivery in Juja. Get groceries, food, parcels, and local FavMarket items delivered straight to your doorstep.">
+<title>Voyager Go — Same-Day Home Delivery in Juja | FavMarket</title>
+<meta name="description" content="Voyager Go — Fast, reliable same-day home delivery in Juja. Get groceries, food, parcels, and local FavMarket items delivered straight to your doorstep.">
 <meta name="theme-color" content="#0b76ef" />
-<meta name="keywords" content="FavHome Deliveries, Juja delivery, home delivery, groceries delivery, parcel delivery, local delivery, FavMarket, Juja">
+<meta name="keywords" content="Voyager Go, Fast, Juja delivery, home delivery, groceries delivery, parcel delivery, local delivery, FavMarket, Juja">
 
 <!-- Favicon & Touch Icons -->
 <link rel="icon" href="/favicon.ico" />
@@ -15,7 +15,7 @@
 <!-- Preload Fonts -->
 <link rel="preload" href="/fonts/Inter.woff2" as="font" type="font/woff2" crossorigin>
 
-<!-- CSS (unchanged) -->
+<!-- CSS -->
 <style>
 :root{
   --accent:#0b76ef;
@@ -29,8 +29,6 @@
   --glass-2: rgba(255,255,255,0.02);
   --warm: #ffd59e;
 }
-
-/* Base */
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -41,8 +39,7 @@ body{
   overflow-x:hidden;
   -webkit-font-smoothing:antialiased;
 }
-
-/* ---------- Welcome overlay (lovely) ---------- */
+/* Welcome overlay */
 #welcomeOverlay {
   position: fixed; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -53,7 +50,6 @@ body{
   opacity: 1;
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
-
 .logo-bubble {
   width: 96px; height: 96px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -64,47 +60,26 @@ body{
   opacity: 0;
   animation: bubbleIn 0.8s ease-out forwards, floatBubble 4s ease-in-out infinite;
 }
-
 #welcomeOverlay h1,
-#welcomeOverlay p {
-  opacity: 0;
-  color: #333;
-}
-
+#welcomeOverlay p { opacity:0; color:#333; }
 #welcomeOverlay h1 {
   font-size:22px; margin:0; text-align:center; font-weight:800;
   animation: fadeText 0.8s ease forwards;
   animation-delay: 0.4s;
 }
-
 #welcomeOverlay p {
   margin:0; font-size:14px;
   animation: fadeText 0.8s ease forwards;
   animation-delay: 0.6s;
 }
-
 #welcomeOverlay.hidden {
   opacity:0; transform: scale(0.95); pointer-events:none;
 }
+@keyframes bubbleIn {0% { transform: scale(0.8); opacity: 0; } 60% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); }}
+@keyframes fadeText {0% { opacity: 0; transform: translateY(4px); } 100% { opacity: 1; transform: translateY(0); }}
+@keyframes floatBubble {0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); }}
 
-/* welcome overlay animations */
-@keyframes bubbleIn {
-  0% { transform: scale(0.8); opacity: 0; }
-  60% { transform: scale(1.05); opacity: 1; }
-  100% { transform: scale(1); }
-}
-
-@keyframes fadeText {
-  0% { opacity: 0; transform: translateY(4px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes floatBubble {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-/* ---------- Header ---------- */
+/* Header */
 .header-wrap{ position:relative; z-index:50; }
 header{
   display:flex;align-items:center;justify-content:space-between;padding:14px 18px;
@@ -120,8 +95,6 @@ header{
 }
 .brand h1{font-size:18px;margin:0;font-weight:800}
 .slogan{font-size:12px;color:rgba(255,255,255,0.95)}
-
-/* Explore fixed top-left (icon + label) */
 #exploreFixed{
   position:fixed; left:12px; top:12px; z-index:999;
   display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;
@@ -129,12 +102,10 @@ header{
   backdrop-filter: blur(4px); cursor:pointer; font-weight:700;
 }
 #exploreFixed svg{ width:18px;height:18px; display:block; }
-
-/* top-right FavMarket */
 .header-actions{display:flex;align-items:center;gap:10px}
 .top-btn{ background:var(--glass); border:1px solid rgba(255,255,255,0.04); color:var(--text); padding:8px 10px;border-radius:10px; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:8px; }
 
-/* ---------- Sidebar ---------- */
+/* Sidebar */
 #sideShade{ position:fixed; inset:0; background:rgba(0,0,0,0.45); opacity:0; pointer-events:none; transition:opacity .22s; z-index:80; }
 #sidebar{
   position:fixed; left:-340px; top:0; height:100%; width:340px;
@@ -146,21 +117,16 @@ header{
 }
 #sidebar.open{ left:0; }
 #sideShade.show{ opacity:1; pointer-events:auto; }
-
 .side-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .side-brand{ display:flex; gap:10px; align-items:center; }
 .side-brand .mini{ width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#71f7a1,#b1ffe0); color:#022; font-weight:900; display:flex; align-items:center; justify-content:center; font-size:18px; }
-
-/* side list */
 .side-list{ display:flex; flex-direction:column; gap:8px; margin-top:8px; overflow:auto; padding-right:8px; }
 .side-item{ display:flex; align-items:center; gap:12px; padding:10px; border-radius:10px; cursor:pointer; color:var(--text); transition:transform .12s, background .12s; user-select:none; }
 .side-item:hover{ transform:translateY(-4px); background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
 .side-item .ic{ width:36px;height:36;border-radius:8px;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#ffffff10,#ffffff06); }
-
-/* coming soon badge */
 .coming{ font-size:11px; color:#fff; background:rgba(255,255,255,0.03); padding:6px 8px; border-radius:999px; margin-left:auto; font-weight:700; }
 
-/* ---------- Hero ---------- */
+/* Hero */
 .hero{
   width:100%; min-height:320px; display:flex; align-items:center; justify-content:space-between;
   gap:20px; padding:28px; border-radius:12px; background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
@@ -170,33 +136,23 @@ header{
 .hero h2{ font-size:30px; margin:0 0 10px; }
 .hero p{ margin:0 0 16px; color:var(--muted) }
 .hero-cta{ display:flex; gap:12px; align-items:center; }
-
-/* main CTA (in hero) */
 .cta-primary{
   background:linear-gradient(90deg,#27ae60,#0b76ef); color:#062; padding:12px 16px; border-radius:12px; font-weight:800; border:none; cursor:pointer;
 }
-
-/* right cards */
 .hero-right{ width:36%; display:flex; flex-direction:column; gap:10px; align-items:flex-end; }
 .card-play{ width:260px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px; border-radius:12px; box-shadow:0 10px 28px rgba(0,0,0,0.35); }
 .card-play h4{ margin:0 0 8px; color:var(--accent); font-size:14px; }
 .warm-note{ font-size:13px; color:var(--muted); line-height:1.4; }
-
-/* subtle color change for warm note / ETA */
 .warm-note-bg { background: linear-gradient(90deg,#fff6e6,#fffaf0); padding:10px; border-radius:8px; color:#0c0c0c; }
 .eta-bg { background: linear-gradient(90deg,#eaf7ff,#eefcff); padding:10px; border-radius:8px; color:#0c0c0c; font-weight:700; }
 
-/* ---------- Main grid ---------- */
+/* Main grid */
 main{ max-width:1100px; margin:14px auto 40px; padding:0 16px; }
 .grid{ display:grid; grid-template-columns:1fr 380px; gap:20px; align-items:start; }
 .section-card{ background:var(--card-gradient); border-radius:12px; padding:14px; box-shadow:0 12px 28px rgba(0,0,0,0.45); }
-
-/* inputs and buttons */
 input,textarea,select{ width:100%; padding:10px; border-radius:10px; border:1px solid #3b3f55; background:#23263a; color:var(--text); margin-bottom:12px; }
 button.order-btn{ background:var(--cta-red); color:white; padding:10px 14px; border-radius:10px; border:none; font-weight:800; cursor:pointer; transition:background .18s; }
 button.order-btn:hover{ background:var(--cta-green); }
-
-/* price rows & market */
 .price-row{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,0.03) }
 .market-list{ display:flex; flex-direction:column; gap:8px; }
 .market-item{ background:rgba(255,255,255,0.02); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; }
@@ -205,7 +161,7 @@ button.order-btn:hover{ background:var(--cta-green); }
 .offline{ display:none; padding:10px; border-radius:8px; background:linear-gradient(90deg,#fff3cd,#ffe8b8); color:#5a3e00 }
 .toast{ position:fixed; right:18px; bottom:110px; background:#0b76ef; color:white; padding:10px 12px; border-radius:10px; display:none; z-index:999; }
 
-/* Order round CTA (thin red ring, white inner circle) */
+/* Order round CTA */
 #roundOrder{
   position:fixed; right:18px; bottom:18px; z-index:999;
   width:84px; height:84px; border-radius:50%;
@@ -217,25 +173,23 @@ button.order-btn:hover{ background:var(--cta-green); }
 }
 #roundOrder:hover{ transform:scale(1.04); transition:transform .15s; }
 
-/* responsive */
 @media (max-width:960px){
   .grid{ grid-template-columns:1fr; }
   .hero-right{ width:100%; align-items:flex-start }
   #sidebar{ width:92%; left:-110% }
   #sidebar.open{ left:4% }
 }
-
 .small{ font-size:13px; color:var(--muted); }
 </style>
 
-<!-- Open Graph / Twitter -->
+<!-- Open Graph -->
 <meta property="og:title" content="FavHome Deliveries — Same-Day Home Delivery in Juja | FavMarket">
 <meta property="og:description" content="Fast, reliable same-day home delivery in Juja. Groceries, food, parcels, and local FavMarket items delivered straight to your doorstep.">
 <meta property="og:image" content="https://yourdomain.com/logo.png">
 <meta property="og:url" content="https://yourdomain.com">
 <meta name="twitter:card" content="summary_large_image">
 
-<!-- Structured Data (DeliveryService) -->
+<!-- Structured Data -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -243,22 +197,14 @@ button.order-btn:hover{ background:var(--cta-green); }
   "name": "FavHome Deliveries",
   "image": "https://yourdomain.com/logo.png",
   "description": "Same-day home delivery service in Juja. Groceries, food, parcels, and FavMarket items.",
-  "address": {
-    "@type": "PostalAddress",
-    "addressLocality": "Juja",
-    "addressRegion": "Kenya"
-  },
+  "address": {"@type":"PostalAddress","addressLocality":"Juja","addressRegion":"Kenya"},
   "telephone": "+254757817361",
   "url": "https://yourdomain.com",
-  "areaServed": {
-    "@type": "Place",
-    "name": "Juja, Kenya"
-  },
+  "areaServed": {"@type": "Place", "name":"Juja, Kenya"},
   "serviceType": "Same-day home delivery"
 }
 </script>
 </head>
-
 <body>
 
 <!-- Explore fixed top-left -->
@@ -363,11 +309,12 @@ button.order-btn:hover{ background:var(--cta-green); }
   <div class="hero-left">
     <h1>FavHome Deliveries — Same-Day Home Delivery in Juja</h1>
     <p>Get groceries, food, parcels, and FavMarket items delivered straight to your doorstep in Juja. Fast, reliable, and easy to use — just like your favorite delivery apps.</p>
-    <p>Download our app and experience Juja's most convenient home delivery service, available for Android and iOS.</p>
-    <div class="hero-cta">
-      <a href="/download_apk" class="cta-primary">Download App</a>
-      <a href="#order" class="cta-primary" style="background:#ff5733">Order Now</a>
-    </div>
+    <p>Order directly below and get fast deliveries across Juja.</p>
+
+<div class="hero-cta">
+  <a href="#order" class="cta-primary" style="background:#ff5733">Order Now</a>
+</div>
+
     <p class="small">Serving all neighborhoods in Juja. Groceries, food, parcels — we deliver it all!</p>
   </div>
   <div class="hero-right">
@@ -437,7 +384,7 @@ button.order-btn:hover{ background:var(--cta-green); }
         <!-- Account Number -->
         <div style="margin-top:8px; padding:10px; background:linear-gradient(90deg,#eef2f7,#dde6f5); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
           <span style="font-weight:700; color:#0b76ef;">Account Number:</span>
-          <input type="text" value="01100695383001" id="accountNumber" readonly style="border:none; background:transparent; font-weight:700; color:#0b76ef; text-align:right;">
+          <input type="text" value="123456" id="accountNumber" readonly style="border:none; background:transparent; font-weight:700; color:#0b76ef; text-align:right;">
           <button type="button" onclick="copyAcc()" style="margin-left:8px; padding:6px 10px; border:none; border-radius:6px; background:#0b76ef; color:white; cursor:pointer;">Copy</button>
         </div>
       </div>
