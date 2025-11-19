@@ -445,7 +445,33 @@ def allowed_file(filename):
 # ----------------------- STATIC INDEX -----------------------
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    # Read the static index.html
+    index_path = Path('index.html')
+    if not index_path.exists():
+        return "Index not found", 404
+    html_content = index_path.read_text(encoding='utf-8')
+
+    # Fetch current market items (public only)
+    items = fetch_market_rows(public=True)
+
+    # Build SEO-friendly market list
+    market_html = "<ul>"
+    for item in items:
+        market_html += (
+            f"<li>"
+            f"<strong>{html.escape(item['title'])}</strong> — "
+            f"{html.escape(item['description'])} | "
+            f"Price: KES {item['price']} | "
+            f"Seller: {html.escape(item['seller_name'])}"
+            f"</li>"
+        )
+    market_html += "</ul>"
+
+    # Inject into a placeholder in index.html
+    # In your index.html, add <!--MARKET_LISTINGS--> where the list should appear
+    html_content = html_content.replace("<!--MARKET_LISTINGS-->", market_html)
+
+    return html_content
 
 @app.route('/favmarket.html')
 def favmarket():
@@ -1018,4 +1044,5 @@ safe_startup_sync()
 if __name__ == '__main__':
     print("FavHome Deliveries running...")
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
+
 
