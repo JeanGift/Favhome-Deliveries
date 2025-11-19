@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>FavMarket — Buy & Sell in Juja</title>
-<meta name="description" content="FavMarket — Community marketplace in Juja. Sell your products, discover goods, buy safely with FavHome." />
+<title>Voyager Go — Buy & Sell in Juja</title>
+<meta name="description" content="Voyager Go — Community marketplace in Juja. Sell your products, discover goods, buy safely with FavHome." />
 <meta name="theme-color" content="#0b76ef" />
 <style>
 /* CSS as you provided (all included) */
@@ -30,8 +30,8 @@ input:focus, textarea:focus, select:focus{ outline:none; border-color: var(--acc
 .listing img{ max-width:100%; border-radius:12px; margin-bottom:8px; object-fit:cover; height:120px; width:100%; }
 .offline{ display:none; padding:12px; border-radius:10px; background:#ffc; color:#664d03; margin-bottom:12px; animation: pulse 2s infinite alternate; }
 @keyframes pulse{ 0%{ transform:scale(1); opacity:.8;} 100%{ transform:scale(1.02); opacity:1;} }
-.favmarket-btn { position: fixed; bottom: 24px; right: 24px; width: 80px; height: 80px; background: #ffffff; border: 4px solid var(--action-border-default); border-radius: 50%; color: var(--action-border-default); font-weight:700; font-size:14px; text-align:center; line-height:72px; cursor:pointer; z-index:999; transition: transform .3s, box-shadow .3s, background .3s, border-color 8s linear; box-shadow:0 8px 25px rgba(0,0,0,0.4),0 0 15px rgba(255,0,0,0.12); }
-.favmarket-btn:hover{ transform: scale(1.12) rotate(-5deg); box-shadow:0 12px 35px rgba(0,0,0,0.5); }
+.VoyagerGo-btn { position: fixed; bottom: 24px; right: 24px; width: 80px; height: 80px; background: #ffffff; border: 4px solid var(--action-border-default); border-radius: 50%; color: var(--action-border-default); font-weight:700; font-size:14px; text-align:center; line-height:72px; cursor:pointer; z-index:999; transition: transform .3s, box-shadow .3s, background .3s, border-color 8s linear; box-shadow:0 8px 25px rgba(0,0,0,0.4),0 0 15px rgba(255,0,0,0.12); }
+.VoyagerGo-btn:hover{ transform: scale(1.12) rotate(-5deg); box-shadow:0 12px 35px rgba(0,0,0,0.5); }
 #sellModal, #buyModal{ display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); color:#fff; overflow-y:auto; padding:24px; z-index:9999; }
 #sellModal .card, #buyModal .card{ max-width:720px; margin:auto; position:relative; }
 .upload-area{ border:2px dashed rgba(255,255,255,0.06); padding:12px; border-radius:12px; text-align:center; cursor:pointer; margin-bottom:12px; position:relative; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00)); }
@@ -46,14 +46,14 @@ input:focus, textarea:focus, select:focus{ outline:none; border-color: var(--acc
 .bottom-buttons button:hover{ transform:scale(1.05); box-shadow:0 8px 20px rgba(0,0,0,0.2); }
 #listingsContainer{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
 .small{ font-size:13px; color:var(--muted); }
-@media(max-width:520px){ .favmarket-btn{ width:64px; height:64px; line-height:56px; } .preview-card img{ height:110px; } }
+@media(max-width:520px){ .VoyagerGo-btn{ width:64px; height:64px; line-height:56px; } .preview-card img{ height:110px; } }
 </style>
 </head>
 <body>
 
 <header>
   <div>
-    <div class="brand">FavMarket</div>
+    <div class="brand">Voyager Go</div>
     <div class="slogan">Buy &amp; Sell Safely — Juja Marketplace</div>
   </div>
 </header>
@@ -83,7 +83,7 @@ input:focus, textarea:focus, select:focus{ outline:none; border-color: var(--acc
   <button data-filter="Featured" style="border-color:#c0392b;color:#f39c12;">Featured</button>
 </div>
 
-<a href="/" 
+<a href="index.html" 
    style="display:block; width:120px; margin:25px auto;
           text-align:center; background:#fff; color:#333;
           padding:10px 14px; border-radius:25px;
@@ -92,9 +92,8 @@ input:focus, textarea:focus, select:focus{ outline:none; border-color: var(--acc
   ← Back
 </a>
 
-
-<footer style="text-align:center;padding:18px;color:#b8c7d6;">FavMarket • Safe & Local Buying & Selling — Juja</footer>
-<button class="favmarket-btn" id="openSellBtn" title="Sell">Sell</button>
+<footer style="text-align:center;padding:18px;color:#b8c7d6;">Voyager Go • Safe & Local Buying & Selling — Juja</footer>
+<button class="VoyagerGo-btn" id="openSellBtn" title="Sell">Sell</button>
 
 <!-- Modals (Sell & Buy) placeholders -->
 <div id="sellModal"><div class="card"><button class="modal-close" onclick="closeSell()">✕</button><form id="sellForm">
@@ -120,8 +119,8 @@ input:focus, textarea:focus, select:focus{ outline:none; border-color: var(--acc
 <script>
 // JS code you provided goes here (full)
 const UPLOAD_ENDPOINT = '/upload_image'; const MARKET_ENDPOINT = '/market'; const COOP_PAYBILL = '400200'; const COOP_ACCOUNT = 'FAVMARKET-PAY'; 
-let listings = JSON.parse(localStorage.getItem('favmarket_listings') || '[]'); 
-let queuedUploads = JSON.parse(localStorage.getItem('favmarket_upload_queue') || '[]'); 
+let listings = JSON.parse(localStorage.getItem('VoyagerGo_listings') || '[]'); 
+let queuedUploads = JSON.parse(localStorage.getItem('VoyagerGo_upload_queue') || '[]'); 
 let currentUploadDataURL = ''; 
 let currentServerImageUrl = '';
 const sellModal = document.getElementById('sellModal');
@@ -155,9 +154,9 @@ function renderPreview(){ previewContainer.innerHTML=''; if(!currentUploadDataUR
 
 function removePreview(){ currentUploadDataURL=''; currentServerImageUrl=''; imageFileInput.value=''; previewContainer.innerHTML=''; }
 
-function queueUpload(file){ const reader=new FileReader(); reader.onload=ev=>{ queuedUploads.push({id:Date.now(),filename:file.name,dataURL:ev.target.result}); localStorage.setItem('favmarket_upload_queue',JSON.stringify(queuedUploads)); }; reader.readAsDataURL(file); }
+function queueUpload(file){ const reader=new FileReader(); reader.onload=ev=>{ queuedUploads.push({id:Date.now(),filename:file.name,dataURL:ev.target.result}); localStorage.setItem('VoyagerGo_upload_queue',JSON.stringify(queuedUploads)); }; reader.readAsDataURL(file); }
 
-async function processQueuedUploads(){ if(!navigator.onLine||!queuedUploads.length) return; const queue=queuedUploads.slice(); queuedUploads=[]; localStorage.setItem('favmarket_upload_queue',JSON.stringify(queuedUploads)); for(const entry of queue){ try{ const blob=dataURLtoBlob(entry.dataURL); await uploadBlobToServer(blob,entry.filename); }catch(e){ console.warn('Queued upload failed',e); } } }
+async function processQueuedUploads(){ if(!navigator.onLine||!queuedUploads.length) return; const queue=queuedUploads.slice(); queuedUploads=[]; localStorage.setItem('VoyagerGo_upload_queue',JSON.stringify(queuedUploads)); for(const entry of queue){ try{ const blob=dataURLtoBlob(entry.dataURL); await uploadBlobToServer(blob,entry.filename); }catch(e){ console.warn('Queued upload failed',e); } } }
 
 function dataURLtoBlob(dataurl){ const arr=dataurl.split(','); const mime=arr[0].match(/:(.*?);/)[1]; const bstr=atob(arr[1]); let n=bstr.length; const u8arr=new Uint8Array(n); while(n--){ u8arr[n]=bstr.charCodeAt(n); } return new Blob([u8arr],{type:mime}); }
 
@@ -165,7 +164,7 @@ async function uploadFileToServer(file){ try{ const fd=new FormData(); fd.append
 
 async function uploadBlobToServer(blob,filename){ try{ const fd=new FormData(); fd.append('file',blob,filename||('img-'+Date.now()+'.png')); const res=await fetch(UPLOAD_ENDPOINT,{method:'POST',body:fd}); if(!res.ok) throw new Error('Upload failed'); const j=await res.json(); return (j && j.ok)?j.url:null; }catch(e){ throw e; } }
 
-function saveListings(){ localStorage.setItem('favmarket_listings',JSON.stringify(listings)); }
+function saveListings(){ localStorage.setItem('VoyagerGo_listings',JSON.stringify(listings)); }
 
 function renderListings(){ listingsContainer.innerHTML=''; const q=(document.getElementById('searchInput')||{value:''}).value.trim().toLowerCase(); const minP=parseFloat((document.getElementById('minPrice')||{value:''}).value)||0; const maxP=parseFloat((document.getElementById('maxPrice')||{value:''}).value)||Infinity; let filtered=listings.filter(item=>{ const price=parseFloat(item.price)||0; const matchesText=!q||(item.title&&item.title.toLowerCase().includes(q))||(item.description&&item.description.toLowerCase().includes(q)); return matchesText&&price>=minP&&price<=maxP; }); if(!filtered.length){ listingsContainer.innerHTML='<p class="small">No items found.</p>'; return; } filtered.forEach((item,idx)=>{ const d=el('div',{class:'listing'}); d.innerHTML=`${item.image?`<img src="${item.image}" alt="${item.title}">`:''}<h3>${item.title}</h3><p><strong>KSh ${item.price}</strong></p><p class="small">Seller: ${item.sellerName}</p>`; const btnRow=el('div',{},''); btnRow.style.display='flex'; btnRow.style.gap='6px'; btnRow.style.width='100%'; const buy=el('button',{class:'buy-btn'},'Buy'); buy.style.flex='1'; buy.onclick=ev=>{ ev.stopPropagation(); openBuyModal(idx); }; const del=el('button',{class:'order-btn'},'Delete'); del.style.flex='1'; del.style.background='#c0392b'; del.onclick=ev=>{ ev.stopPropagation(); attemptDelete(idx); }; btnRow.appendChild(buy); btnRow.appendChild(del); d.appendChild(btnRow); d.onclick=()=> openFullView(item,idx); listingsContainer.appendChild(d); }); }
 
@@ -197,4 +196,3 @@ processQueuedUploads();
 
 </body>
 </html>
-
