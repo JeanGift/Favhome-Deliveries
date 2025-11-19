@@ -455,8 +455,8 @@ def favmarket():
 @app.route('/manifest.json')
 def manifest():
     return jsonify({
-        "name": "FavHome Deliveries",
-        "short_name": "FavHome",
+        "name": "Voyager Go",
+        "short_name": "Voyager",
         "start_url": ".",
         "display": "standalone",
         "background_color": "#f7fbff",
@@ -926,15 +926,32 @@ def public_orders():
 # ----------------------- ROBOTS & SITEMAP -----------------------
 @app.route('/robots.txt')
 def robots():
-    txt = "User-agent: *\nAllow: /\nSitemap: /sitemap.xml\n# Hidden admin page not listed"
+    txt = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Sitemap: /sitemap.xml\n"
+        "# Voyager Go admin page hidden, not listed"
+    )
     return app.response_class(txt, mimetype='text/plain')
+@app.route('/market')
+def market_page():
+    return send_from_directory('.', 'favmarket.html')
 
 @app.route('/sitemap.xml')
 def sitemap():
     base = request.host_url.rstrip('/')
-    urls = ['/', '/order', '/favmarket.html']
+    urls = [
+        '/',
+        '/order',
+        '/market',
+        '/api/orders/public',
+        '/api/market/public',
+        '/favmarket.html'
+    ]
     body = ''.join([f"<url><loc>{base}{u}</loc></url>\n" for u in urls])
-    xml = f"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n{body}</urlset>"
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{body}</urlset>"""
     return app.response_class(xml, mimetype='application/xml')
 
 # ----------------------- STATIC PROXY (serves uploads and other static files) -----------------------
@@ -1001,3 +1018,4 @@ safe_startup_sync()
 if __name__ == '__main__':
     print("FavHome Deliveries running...")
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
+
