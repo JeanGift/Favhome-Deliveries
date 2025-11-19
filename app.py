@@ -1,4 +1,6 @@
 # app.py — FavHome Deliveries (safe GitHub-backed SQLite sync on boot + after-writes)
+import threading
+import requests
 import os
 import sqlite3
 import html
@@ -31,6 +33,22 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 # ----------------------- UTILITIES -----------------------
+
+
+def keep_awake():
+    """Background thread to ping self every 30-40 seconds."""
+    import time
+    url = f"http://localhost:{os.environ.get('PORT', 5000)}/ping"
+    while True:
+        try:
+            requests.get(url, timeout=5)
+        except:
+            pass
+        time.sleep(35)  # ping every 35 seconds (Render wakes at ~55s inactivity)
+
+# Start keep-awake thread
+threading.Thread(target=keep_awake, daemon=True).start()
+
 def _headers():
     h = {"Accept": "application/vnd.github.v3+json"}
     if GITHUB_TOKEN:
