@@ -3,10 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>FavHome Deliveries & FavMarket — Juja</title>
-<meta name="description" content="FavHome Deliveries — Doorstep delivery service serving Juja. Order groceries, food, parcels & check FavMarket community items." />
+<title>FavHome Deliveries — Same-Day Home Delivery in Juja | FavMarket</title>
+<meta name="description" content="FavHome Deliveries — Fast, reliable same-day home delivery in Juja. Get groceries, food, parcels, and local FavMarket items delivered straight to your doorstep.">
 <meta name="theme-color" content="#0b76ef" />
+<meta name="keywords" content="FavHome Deliveries, Juja delivery, home delivery, groceries delivery, parcel delivery, local delivery, FavMarket, Juja">
 
+<!-- Favicon & Touch Icons -->
+<link rel="icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<!-- Preload Fonts -->
+<link rel="preload" href="/fonts/Inter.woff2" as="font" type="font/woff2" crossorigin>
+
+<!-- CSS (unchanged) -->
 <style>
 :root{
   --accent:#0b76ef;
@@ -76,73 +85,6 @@ body{
 
 #welcomeOverlay.hidden {
   opacity:0; transform: scale(0.95); pointer-events:none;
-}
-
-  /* ---------- Mobile adjustments ---------- */
-@media (max-width:600px) {
-  header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    padding: 12px 16px;
-  }
-  .brand h1 { font-size: 16px; }
-  .slogan { font-size: 11px; }
-
-  .hero {
-    flex-direction: column;
-    padding: 18px;
-    min-height: auto;
-  }
-  .hero-left, .hero-right { max-width: 100%; width: 100%; }
-  .hero h2 { font-size: 22px; }
-  .hero p { font-size: 13px; }
-
-  .grid { grid-template-columns: 1fr; gap: 14px; }
-  .section-card { padding: 12px; }
-
-  input, textarea, select {
-    font-size: 14px;
-    padding: 8px;
-  }
-
-  #roundOrder {
-    width: 64px;
-    height: 64px;
-    bottom: 12px;
-    right: 12px;
-    font-size: 11px;
-  }
-
-  #exploreFixed {
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-
-  .market-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-
-  .offline { font-size: 12px; padding: 8px; }
-}
-
-/* ---------- Ensure back button is mobile-friendly ---------- */
-a.back-btn {
-  display: block;
-  width: 90%;
-  max-width: 180px;
-  margin: 16px auto;
-  text-align: center;
-  background: #fff;
-  color: #333;
-  padding: 10px 14px;
-  border-radius: 25px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 14px;
 }
 
 /* welcome overlay animations */
@@ -285,7 +227,38 @@ button.order-btn:hover{ background:var(--cta-green); }
 
 .small{ font-size:13px; color:var(--muted); }
 </style>
+
+<!-- Open Graph / Twitter -->
+<meta property="og:title" content="FavHome Deliveries — Same-Day Home Delivery in Juja | FavMarket">
+<meta property="og:description" content="Fast, reliable same-day home delivery in Juja. Groceries, food, parcels, and local FavMarket items delivered straight to your doorstep.">
+<meta property="og:image" content="https://yourdomain.com/logo.png">
+<meta property="og:url" content="https://yourdomain.com">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- Structured Data (DeliveryService) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "DeliveryService",
+  "name": "FavHome Deliveries",
+  "image": "https://yourdomain.com/logo.png",
+  "description": "Same-day home delivery service in Juja. Groceries, food, parcels, and FavMarket items.",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Juja",
+    "addressRegion": "Kenya"
+  },
+  "telephone": "+254757817361",
+  "url": "https://yourdomain.com",
+  "areaServed": {
+    "@type": "Place",
+    "name": "Juja, Kenya"
+  },
+  "serviceType": "Same-day home delivery"
+}
+</script>
 </head>
+
 <body>
 
 <!-- Explore fixed top-left -->
@@ -385,28 +358,34 @@ button.order-btn:hover{ background:var(--cta-green); }
   </div>
 </aside>
 
-<!-- hero -->
-<section class="hero" role="region" aria-label="Hero">
+<!-- HERO SECTION: Main Intro / SEO Optimized -->
+<section class="hero">
   <div class="hero-left">
-    <h2>FavHome — same day delivery, local prices</h2>
-    <p>We pick up groceries, parcels and essentials — direct to your door in Juja.</p>
+    <h1>FavHome Deliveries — Same-Day Home Delivery in Juja</h1>
+    <p>Get groceries, food, parcels, and FavMarket items delivered straight to your doorstep in Juja. Fast, reliable, and easy to use — just like your favorite delivery apps.</p>
+    <p>Download our app and experience Juja's most convenient home delivery service, available for Android and iOS.</p>
     <div class="hero-cta">
-      <button class="cta-primary" onclick="openOrder()">Order Now</button>
-      <button class="top-btn" onclick="openSidebar()">Explore Menu</button>
+      <a href="/download_apk" class="cta-primary">Download App</a>
+      <a href="#order" class="cta-primary" style="background:#ff5733">Order Now</a>
     </div>
+    <p class="small">Serving all neighborhoods in Juja. Groceries, food, parcels — we deliver it all!</p>
   </div>
-
   <div class="hero-right">
     <div class="card-play">
-      <h4>Warm note</h4>
-      <div class="warm-note warm-note-bg">Thanks for supporting a local service — your delivery will be handled carefully.</div>
+      <h4>Why Choose FavHome?</h4>
+      <ul class="warm-note">
+        <li>Same-day delivery across Juja</li>
+        <li>Easy app ordering, like Glovo or Uber Eats</li>
+        <li>Groceries, parcels, and local FavMarket items</li>
+        <li>Track your delivery in real-time</li>
+      </ul>
     </div>
-    <div class="card-play">
-      <h4>Today’s ETA</h4>
-      <div class="warm-note eta-bg">Current average: <strong>12–25 minutes</strong> (subject to traffic)</div>
+    <div class="card-play warm-note-bg">
+      <p>Tip: Use our round red “Order Now” button to place orders instantly!</p>
     </div>
   </div>
 </section>
+
 
 <!-- main grid -->
 <main>
@@ -458,7 +437,7 @@ button.order-btn:hover{ background:var(--cta-green); }
         <!-- Account Number -->
         <div style="margin-top:8px; padding:10px; background:linear-gradient(90deg,#eef2f7,#dde6f5); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
           <span style="font-weight:700; color:#0b76ef;">Account Number:</span>
-          <input type="text" value="123456" id="accountNumber" readonly style="border:none; background:transparent; font-weight:700; color:#0b76ef; text-align:right;">
+          <input type="text" value="01100695383001" id="accountNumber" readonly style="border:none; background:transparent; font-weight:700; color:#0b76ef; text-align:right;">
           <button type="button" onclick="copyAcc()" style="margin-left:8px; padding:6px 10px; border:none; border-radius:6px; background:#0b76ef; color:white; cursor:pointer;">Copy</button>
         </div>
       </div>
@@ -759,4 +738,3 @@ document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState 
 </script>
 </body>
 </html>
-
